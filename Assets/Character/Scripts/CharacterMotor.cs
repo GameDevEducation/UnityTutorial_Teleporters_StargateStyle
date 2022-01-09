@@ -4,6 +4,7 @@ using UnityEngine;
 using Cinemachine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 [System.Serializable]
 public class ControlSchemeChanged : UnityEvent<PlayerInput> {}
@@ -102,6 +103,25 @@ public class CharacterMotor : MonoBehaviour, IPausable
     {
         if (EnableUpdates)
             OnToggleSettingsMenu?.Invoke();
+    }
+
+    public void OnFire(InputValue value)
+    {
+        if (value.Get<float>() > 0.5f)
+        {
+            PointerEventData pointerData = new PointerEventData(EventSystem.current);
+            pointerData.position = Mouse.current.position.ReadValue();
+
+            // raycast against the UI
+            List<RaycastResult> results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
+
+            foreach (RaycastResult result in results)
+            {
+                if (result.distance < Config.MaxInteractionDistance)
+                    ExecuteEvents.Execute(result.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+            }
+        }
     }
 
     public void OnControlsChanged(PlayerInput input)
